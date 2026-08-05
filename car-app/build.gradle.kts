@@ -7,6 +7,15 @@ android {
     namespace = "com.cargps"
     compileSdk = 34
 
+    val releaseStoreFile = providers.environmentVariable("ANDROID_SIGNING_STORE_FILE")
+    val releaseStorePassword = providers.environmentVariable("ANDROID_SIGNING_STORE_PASSWORD")
+    val releaseKeyAlias = providers.environmentVariable("ANDROID_SIGNING_KEY_ALIAS")
+    val releaseKeyPassword = providers.environmentVariable("ANDROID_SIGNING_KEY_PASSWORD")
+    val hasReleaseSigning = releaseStoreFile.isPresent &&
+        releaseStorePassword.isPresent &&
+        releaseKeyAlias.isPresent &&
+        releaseKeyPassword.isPresent
+
     defaultConfig {
         applicationId = "com.cargps"
         minSdk = 27
@@ -15,6 +24,27 @@ android {
         versionName = "0.1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+    }
+
+    // 作者：long｜只有四项签名变量全部存在时才注册正式签名，避免误把缺少密码的半配置当成可发布构建。
+    signingConfigs {
+        if (hasReleaseSigning) {
+            create("release") {
+                storeFile = file(releaseStoreFile.get())
+                storePassword = releaseStorePassword.get()
+                keyAlias = releaseKeyAlias.get()
+                keyPassword = releaseKeyPassword.get()
+            }
+        }
+    }
+
+    buildTypes {
+        release {
+            isMinifyEnabled = false
+            if (hasReleaseSigning) {
+                signingConfig = signingConfigs.getByName("release")
+            }
+        }
     }
 
     compileOptions {
