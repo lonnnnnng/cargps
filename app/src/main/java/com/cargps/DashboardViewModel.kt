@@ -44,8 +44,8 @@ data class DashboardState(
     val bearingDegrees: Float? = null,
     val accuracyMeters: Float? = null,
     val lastFixAtMillis: Long? = null,
-    val satellitesInView: Int = 0,
-    val satellitesUsed: Int = 0,
+    val satellitesInView: Int? = null,
+    val satellitesUsed: Int? = null,
     val hdop: Double? = null,
     val pdop: Double? = null,
     val vdop: Double? = null,
@@ -167,8 +167,18 @@ class DashboardViewModel : ViewModel() {
             copy(
                 nowMillis = nowMillis,
                 fixStatus = currentStatus,
-                speedKmh = if (currentStatus == FixStatus.LOST) null else speedKmh,
-                tripStats = calculateTripStats(nowMillis),
+                speedKmh = when (currentStatus) {
+                    FixStatus.STALE -> 0.0
+                    FixStatus.LOST -> null
+                    else -> speedKmh
+                },
+                tripStats = calculateTripStats(
+                    if (currentStatus == FixStatus.STALE || currentStatus == FixStatus.LOST) {
+                        lastFixAtMillis ?: nowMillis
+                    } else {
+                        nowMillis
+                    },
+                ),
             )
         }
     }
