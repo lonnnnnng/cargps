@@ -6,7 +6,7 @@
 
 ## 1. 技术边界
 
-采用原生 Android 应用，以 Kotlin 和 Jetpack Compose 实现固定横屏仪表。目标车机可能不包含或不稳定支持 Google Play Services，因此定位核心不依赖 Fused Location Provider，也不把网络作为定位或界面的前置条件。
+采用原生 Android 多模块工程，以 Kotlin 和 Jetpack Compose 分别实现固定横屏车机仪表与竖屏手机仪表。目标车机可能不包含或不稳定支持 Google Play Services，因此两端定位核心都不依赖 Fused Location Provider，也不把网络作为定位或界面的前置条件。
 
 工程固定 `minSdk = 27`，只针对已确认车机减少兼容分支；当前使用 `compileSdk = 34`、`targetSdk = 34`，但运行路径不能把 API 30 才加入的重载直接调用在 API 27 上。
 
@@ -49,15 +49,17 @@ flowchart LR
 | 卫星 | `GnssStatus` | GSA/GSV | 分开显示可见数和参与定位数 |
 | 精度因子 | NMEA GSA/GGA | 无 | 设备未输出时显示“未提供” |
 
-## 5. 模块边界
+## 5. 工程与模块边界
 
-- `location-source`：注册和注销系统位置、NMEA、GNSS 状态监听，输出原始事件。
-- `nmea-parser`：校验和、字段解析、语句容错，不维护行程状态。
-- `location-quality`：判断样本是否可显示、是否可累计、是否发生过期或断点。
-- `speed-estimator`：速度来源选择、单位转换、异常值过滤和平滑。
-- `trip-domain`：活动行程状态机、距离和时间统计，不直接依赖 Android UI。
+- `gps-core`：注册和注销系统位置、NMEA、GNSS 状态监听，并承载质量门、速度估算和行程统计；不包含任何车机或手机界面。
+- `car-app`：包名 `com.cargps`，只负责 1024×600 横屏车机界面、权限入口和 Activity 生命周期。
+- `mobile-app`：包名 `com.cargps.mobile`，只负责竖屏手机界面、权限入口和 Activity 生命周期。
+- `nmea-parser`：位于 `gps-core`，处理校验和、字段解析和语句容错，不维护行程状态。
+- `location-quality`：位于 `gps-core`，判断样本是否可显示、是否可累计、是否发生过期或断点。
+- `speed-estimator`：位于 `gps-core`，处理速度来源选择、单位转换、异常值过滤和平滑。
+- `trip-domain`：位于 `gps-core`，处理活动行程状态机、距离和时间统计，不直接依赖 Android UI。
 - `trip-storage`：活动行程快照、已结束行程与轨迹点的本地持久化。
-- `dashboard-ui`：把只读仪表状态渲染到 1024×600 横屏，不自行计算业务统计。
+- `dashboard-ui`：车机和手机分别维护适合自身屏幕的信息架构，只消费同一个只读仪表状态，不自行计算业务统计。
 
 业务规则应写在对应模块实现附近。例如，“定位恢复后不连接失锁前后的两个点”应贴近行程累计器的断点处理代码，而不是只保留在类头说明中。代码注释作者统一为 `long`，关键注释说明业务原因和错误结果，不复述语句动作。
 
@@ -80,8 +82,8 @@ flowchart LR
 - NMEA：合法校验和、错误校验和、缺字段、多星座 talker ID、未知语句、非数值字段。
 - 质量门：时间倒退、重复时间、低精度、超时恢复、跳点、静止漂移。
 - 统计：移动/停车边界、暂停、恢复、结束、进程重建和零时长除法。
-- UI：无权限、无数据、缺海拔、弱定位、过期、超长坐标文本和 1024×600 系统栏安全区。
-- 设备：测试命令必须显式指定 `emulator-5554`，因为当前还连接着 Redmi Note 8 Pro 真机。
+- UI：无权限、无数据、缺海拔、弱定位、过期、超长坐标文本，以及车机 1024×600 与手机竖屏安全区。
+- 设备：车机版显式指定 `CASKA_1024x600`，手机版显式指定 `Pixel_9`；当前还连接着 Redmi Note 8 Pro 真机，任何安装命令都不能依赖 adb 默认设备。
 
 ## 9. 已验证的官方依据
 
