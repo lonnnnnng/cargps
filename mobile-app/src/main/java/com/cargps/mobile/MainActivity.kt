@@ -11,13 +11,16 @@ import androidx.activity.viewModels
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import com.cargps.DashboardViewModel
+import com.cargps.DashboardViewModelFactory
 import com.cargps.LocationEngine
 import com.cargps.domain.NmeaFrame
 import com.cargps.mobile.ui.MobileDashboardScreen
 import com.cargps.mobile.ui.MobileGpsTheme
 
 class MainActivity : ComponentActivity(), LocationEngine.Listener {
-    private val viewModel: DashboardViewModel by viewModels()
+    private val viewModel: DashboardViewModel by viewModels {
+        DashboardViewModelFactory(applicationContext)
+    }
     private lateinit var locationEngine: LocationEngine
 
     private val permissionLauncher = registerForActivityResult(

@@ -66,6 +66,7 @@ import com.cargps.DashboardState
 import com.cargps.DashboardViewModel
 import com.cargps.FixStatus
 import com.cargps.TripMode
+import com.cargps.storage.CompletedTripRecord
 import kotlinx.coroutines.delay
 import java.util.Locale
 
@@ -108,6 +109,7 @@ fun MobileDashboardScreen(
                 SpeedHero(state)
                 TripOverview(state)
                 StatsGrid(state)
+                RecentTripsCard(state.recentTrips)
                 LocationDetails(
                     state = state,
                     expanded = detailsExpanded,
@@ -327,6 +329,14 @@ private fun TripOverview(state: DashboardState) {
                         fontWeight = FontWeight.Bold,
                         color = tripStatusColor(state.tripMode),
                     )
+                    if (state.restoredTrip) {
+                        Text(
+                            "已恢复上次行程",
+                            fontSize = 11.sp,
+                            color = PaceGreen,
+                            fontWeight = FontWeight.SemiBold,
+                        )
+                    }
                 }
                 Spacer(Modifier.weight(1f))
                 Text(
@@ -364,6 +374,72 @@ private fun TripOverview(state: DashboardState) {
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun RecentTripsCard(trips: List<CompletedTripRecord>) {
+    Surface(
+        modifier = Modifier.fillMaxWidth(),
+        color = MaterialTheme.colorScheme.surface,
+        shape = RoundedCornerShape(18.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.52f)),
+    ) {
+        Column(Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Text("最近行程", fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                Spacer(Modifier.weight(1f))
+                Text(
+                    "本地保存 ${trips.size} 段",
+                    fontSize = 11.sp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.48f),
+                )
+            }
+            Spacer(Modifier.height(10.dp))
+            if (trips.isEmpty()) {
+                Text(
+                    "结束第一段行程后，这里会保留最近记录。",
+                    fontSize = 13.sp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.58f),
+                )
+            } else {
+                trips.take(3).forEachIndexed { index, trip ->
+                    RecentTripRow(trip)
+                    if (index < minOf(trips.size, 3) - 1) {
+                        HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.28f))
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun RecentTripRow(trip: CompletedTripRecord) {
+    Row(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 9.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Column(Modifier.weight(1f)) {
+            Text(
+                "${DashboardViewModel.formatDate(trip.startedAtMillis)} ${DashboardViewModel.formatTime(trip.startedAtMillis)}",
+                fontSize = 12.sp,
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.SemiBold,
+            )
+            Text(
+                "用时 ${DashboardViewModel.formatDuration(trip.stats.elapsedMillis)}",
+                fontSize = 11.sp,
+                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.50f),
+            )
+        }
+        Text(
+            "${distanceNumber(trip.stats.distanceMeters)} ${distanceUnit(trip.stats.distanceMeters)}",
+            fontSize = 18.sp,
+            fontFamily = FontFamily.Monospace,
+            fontWeight = FontWeight.Bold,
+            color = PaceGreen,
+        )
     }
 }
 

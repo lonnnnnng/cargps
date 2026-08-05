@@ -10,6 +10,9 @@ import com.cargps.domain.SpeedEstimator
 import com.cargps.domain.TripPoint
 import com.cargps.domain.TripStats
 import com.cargps.domain.TripStatsCalculator
+import com.cargps.storage.CompletedTripRecord
+import com.cargps.storage.NoOpTripStorage
+import com.cargps.storage.TripStorage
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -52,10 +55,15 @@ data class DashboardState(
     val lastNmeaType: NmeaSentenceType? = null,
     val tripMode: TripMode = TripMode.IDLE,
     val tripStats: TripStats = EMPTY_TRIP_STATS,
+    val recentTrips: List<CompletedTripRecord> = emptyList(),
+    val restoredTrip: Boolean = false,
     val darkTheme: Boolean = true,
 )
 
-class DashboardViewModel : ViewModel() {
+class DashboardViewModel(
+    private val storage: TripStorage = NoOpTripStorage,
+    private val nowProvider: () -> Long = System::currentTimeMillis,
+) : ViewModel() {
     private val qualityGate = LocationQualityGate()
     private val speedEstimator = SpeedEstimator()
     private val points = mutableListOf<TripPoint>()
@@ -67,6 +75,10 @@ class DashboardViewModel : ViewModel() {
 
     private val _state = MutableStateFlow(DashboardState())
     val state: StateFlow<DashboardState> = _state.asStateFlow()
+
+    init {
+        restorePersistedState()
+    }
 
     fun onPermissionRequired() = update { copy(fixStatus = FixStatus.PERMISSION_REQUIRED, speedKmh = null) }
 
@@ -110,12 +122,14 @@ class DashboardViewModel : ViewModel() {
         val statsSpeedMps = maxOf(reading.smoothedMps, derivedSpeedMps ?: 0.0)
 
         if (_state.value.tripMode == TripMode.RECORDING) {
-            points += TripPoint(
+            val point = TripPoint(
                 timestampMillis = sample.timestampMillis,
                 speedMps = statsSpeedMps,
                 distanceFromPreviousMeters = distanceMeters,
                 moving = statsSpeedMps >= MOVING_THRESHOLD_MPS,
             )
+            points += point
+            storage.appendPoint(point)
         }
 
         previousSample = sample
@@ -192,11 +206,19 @@ class DashboardViewModel : ViewModel() {
                 totalPausedMillis = 0L
                 previousSample = null
                 previousAndroidLocation = null
-                update { copy(tripMode = TripMode.RECORDING, tripStats = EMPTY_TRIP_STATS) }
+                storage.startTrip(nowMillis)
+                update {
+                    copy(
+                        tripMode = TripMode.RECORDING,
+                        tripStats = EMPTY_TRIP_STATS,
+                        restoredTrip = false,
+                    )
+                }
             }
 
             TripMode.RECORDING -> {
                 pausedAtMillis = nowMillis
+                storage.updateActiveTrip(TripMode.PAUSED, pausedAtMillis, totalPausedMillis)
                 update { copy(tripMode = TripMode.PAUSED) }
             }
 
@@ -206,6 +228,7 @@ class DashboardViewModel : ViewModel() {
                 // 作者：long｜暂停恢复后断开两个定位点，避免把暂停期间位移补算成直线里程。
                 previousSample = null
                 previousAndroidLocation = null
+                storage.updateActiveTrip(TripMode.RECORDING, null, totalPausedMillis)
                 update { copy(tripMode = TripMode.RECORDING) }
             }
         }
@@ -213,18 +236,44 @@ class DashboardViewModel : ViewModel() {
 
     fun endTrip(nowMillis: Long) {
         if (_state.value.tripMode == TripMode.IDLE) return
+        val startedAtMillis = tripStartedAtMillis ?: return
         if (_state.value.tripMode == TripMode.PAUSED) {
             totalPausedMillis += nowMillis - (pausedAtMillis ?: nowMillis)
+            // 作者：long｜结束前清除实时暂停基准，防止统计函数再次把同一段暂停时间计入扣减。
+            pausedAtMillis = null
         }
-        val finalStats = calculateTripStats(nowMillis)
+        val finalStats = TripStatsCalculator.calculate(
+            startAtMillis = startedAtMillis,
+            endAtMillis = nowMillis,
+            points = points,
+            pausedMillis = totalPausedMillis,
+        )
+        storage.completeTrip(
+            CompletedTripRecord(
+                startedAtMillis = startedAtMillis,
+                endedAtMillis = nowMillis,
+                stats = finalStats,
+            ),
+        )
         tripStartedAtMillis = null
-        pausedAtMillis = null
         previousSample = null
         previousAndroidLocation = null
-        update { copy(tripMode = TripMode.IDLE, tripStats = finalStats) }
+        update {
+            copy(
+                tripMode = TripMode.IDLE,
+                tripStats = finalStats,
+                recentTrips = storage.recentTrips(),
+                restoredTrip = false,
+            )
+        }
     }
 
     fun toggleTheme() = update { copy(darkTheme = !darkTheme) }
+
+    override fun onCleared() {
+        storage.close()
+        super.onCleared()
+    }
 
     private fun calculateTripStats(nowMillis: Long): TripStats {
         val startedAt = tripStartedAtMillis ?: return _state.value.tripStats
@@ -234,6 +283,43 @@ class DashboardViewModel : ViewModel() {
             0L
         }
         return TripStatsCalculator.calculate(startedAt, nowMillis, points, livePausedMillis)
+    }
+
+    private fun restorePersistedState() {
+        val recentTrips = storage.recentTrips()
+        val activeTrip = storage.loadActiveTrip()
+        if (activeTrip == null) {
+            update { copy(recentTrips = recentTrips) }
+            return
+        }
+
+        points += activeTrip.points
+        tripStartedAtMillis = activeTrip.startedAtMillis
+        pausedAtMillis = activeTrip.pausedAtMillis
+        totalPausedMillis = activeTrip.totalPausedMillis
+        previousSample = null
+        previousAndroidLocation = null
+
+        val nowMillis = nowProvider()
+        val livePausedMillis = activeTrip.totalPausedMillis + if (activeTrip.mode == TripMode.PAUSED) {
+            nowMillis - (activeTrip.pausedAtMillis ?: nowMillis)
+        } else {
+            0L
+        }
+        update {
+            copy(
+                nowMillis = nowMillis,
+                tripMode = activeTrip.mode,
+                tripStats = TripStatsCalculator.calculate(
+                    startAtMillis = activeTrip.startedAtMillis,
+                    endAtMillis = nowMillis,
+                    points = activeTrip.points,
+                    pausedMillis = livePausedMillis,
+                ),
+                recentTrips = recentTrips,
+                restoredTrip = true,
+            )
+        }
     }
 
     private inline fun update(block: DashboardState.() -> DashboardState) {

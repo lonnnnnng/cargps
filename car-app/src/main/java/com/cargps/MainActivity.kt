@@ -15,7 +15,9 @@ import com.cargps.ui.CarGpsTheme
 import com.cargps.ui.DashboardScreen
 
 class MainActivity : ComponentActivity(), LocationEngine.Listener {
-    private val viewModel: DashboardViewModel by viewModels()
+    private val viewModel: DashboardViewModel by viewModels {
+        DashboardViewModelFactory(applicationContext)
+    }
     private lateinit var locationEngine: LocationEngine
 
     private val permissionLauncher = registerForActivityResult(

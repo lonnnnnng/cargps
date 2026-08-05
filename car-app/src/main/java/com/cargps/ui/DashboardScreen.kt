@@ -361,7 +361,11 @@ private fun TripConsole(state: DashboardState, modifier: Modifier = Modifier) {
                 Column {
                     Text("当前行程", fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.48f))
                     Text(
-                        tripStatusText(state.tripMode),
+                        if (state.restoredTrip && state.tripMode != TripMode.IDLE) {
+                            "已恢复 · ${tripStatusText(state.tripMode)}"
+                        } else {
+                            tripStatusText(state.tripMode)
+                        },
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold,
                         color = tripStatusColor(state.tripMode),
