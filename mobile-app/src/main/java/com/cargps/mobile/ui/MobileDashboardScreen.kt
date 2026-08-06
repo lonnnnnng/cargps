@@ -1,6 +1,5 @@
 package com.cargps.mobile.ui
 
-import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Canvas
@@ -8,10 +7,12 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -19,13 +20,9 @@ import androidx.compose.foundation.layout.safeDrawing
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.layout.windowInsetsPadding
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.DarkMode
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.LightMode
 import androidx.compose.material.icons.filled.LocationOn
 import androidx.compose.material.icons.filled.Pause
@@ -60,6 +57,7 @@ import androidx.compose.ui.semantics.semantics
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.cargps.DashboardState
@@ -82,7 +80,6 @@ fun MobileDashboardScreen(
     onToggleTheme: () -> Unit,
     onTick: (Long) -> Unit,
 ) {
-    var detailsExpanded by remember { mutableStateOf(false) }
     var showEndConfirmation by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
@@ -96,33 +93,25 @@ fun MobileDashboardScreen(
         modifier = Modifier.fillMaxSize(),
         color = MaterialTheme.colorScheme.background,
     ) {
-        Box(Modifier.fillMaxSize().windowInsetsPadding(WindowInsets.safeDrawing)) {
-            Column(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .verticalScroll(rememberScrollState())
-                    .padding(start = 16.dp, top = 12.dp, end = 16.dp, bottom = 112.dp),
-                verticalArrangement = Arrangement.spacedBy(12.dp),
-            ) {
-                MobileHeader(state = state, onToggleTheme = onToggleTheme)
-                LocationHealth(state)
-                SpeedHero(state)
-                TripOverview(state)
-                StatsGrid(state)
-                RecentTripsCard(state.recentTrips)
-                LocationDetails(
-                    state = state,
-                    expanded = detailsExpanded,
-                    onToggle = { detailsExpanded = !detailsExpanded },
-                )
-            }
-
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .windowInsetsPadding(WindowInsets.safeDrawing)
+                .padding(horizontal = 12.dp, vertical = 8.dp),
+            verticalArrangement = Arrangement.SpaceBetween,
+        ) {
+            MobileHeader(state = state, onToggleTheme = onToggleTheme)
+            LocationHealth(state)
+            // 主仪表固定为紧凑高度，避免停车或无数据状态吞掉整页剩余空间。
+            SpeedTripPanel(state = state, modifier = Modifier.height(220.dp))
+            StatsStrip(state)
+            TelemetryStrip(state)
+            RecentTripsCard(state.recentTrips)
             MobileControlBar(
                 state = state,
                 onRequestPermission = onRequestPermission,
                 onToggleTrip = onToggleTrip,
                 onRequestEnd = { showEndConfirmation = true },
-                modifier = Modifier.align(Alignment.BottomCenter),
             )
         }
     }
@@ -158,27 +147,21 @@ fun MobileDashboardScreen(
 @Composable
 private fun MobileHeader(state: DashboardState, onToggleTheme: () -> Unit) {
     Row(
-        modifier = Modifier.fillMaxWidth().height(52.dp),
+        modifier = Modifier.fillMaxWidth().height(44.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column {
-            Text(
-                text = "CAR GPS",
-                color = MaterialTheme.colorScheme.primary,
-                fontSize = 14.sp,
-                fontWeight = FontWeight.Black,
-                letterSpacing = 2.4.sp,
-            )
-            Text(
-                text = "随身行程仪表",
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.56f),
-                fontSize = 12.sp,
-            )
-        }
+        Text(
+            text = "CAR GPS",
+            color = MaterialTheme.colorScheme.primary,
+            fontSize = 14.sp,
+            fontWeight = FontWeight.Black,
+            letterSpacing = 2.4.sp,
+            maxLines = 1,
+        )
         Spacer(Modifier.weight(1f))
         Text(
             text = "${DashboardViewModel.formatDate(state.nowMillis)} ${DashboardViewModel.formatTime(state.nowMillis)}",
-            fontSize = 14.sp,
+            fontSize = 13.sp,
             fontFamily = FontFamily.Monospace,
             fontWeight = FontWeight.Bold,
             maxLines = 1,
@@ -196,13 +179,13 @@ private fun MobileHeader(state: DashboardState, onToggleTheme: () -> Unit) {
 private fun LocationHealth(state: DashboardState) {
     val (statusText, statusColor) = fixStatusPresentation(state.fixStatus)
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().height(60.dp),
         color = statusColor.copy(alpha = 0.10f),
-        shape = RoundedCornerShape(16.dp),
+        shape = RoundedCornerShape(14.dp),
         border = BorderStroke(1.dp, statusColor.copy(alpha = 0.34f)),
     ) {
         Row(
-            modifier = Modifier.padding(horizontal = 14.dp, vertical = 11.dp),
+            modifier = Modifier.fillMaxSize().padding(horizontal = 14.dp),
             verticalAlignment = Alignment.CenterVertically,
         ) {
             Box(Modifier.size(9.dp).background(statusColor, RoundedCornerShape(99.dp)))
@@ -212,20 +195,23 @@ private fun LocationHealth(state: DashboardState) {
                 Text(
                     text = locationHealthDetail(state),
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.62f),
-                    fontSize = 12.sp,
+                    fontSize = 11.sp,
+                    maxLines = 1,
+                    overflow = TextOverflow.Ellipsis,
                 )
             }
             Spacer(Modifier.weight(1f))
             TechnicalValue("卫星", satelliteText(state))
-            Spacer(Modifier.width(14.dp))
+            Spacer(Modifier.width(12.dp))
             TechnicalValue("精度", state.accuracyMeters?.let { "±${it.toInt()}m" } ?: "--")
         }
     }
 }
 
 @Composable
-private fun SpeedHero(state: DashboardState) {
+private fun SpeedTripPanel(state: DashboardState, modifier: Modifier = Modifier) {
     val speed = state.speedKmh
+    val stats = state.tripStats
     val progress by animateFloatAsState(
         targetValue = ((speed ?: 0.0) / 200.0).coerceIn(0.0, 1.0).toFloat(),
         label = "mobile-speed-gauge",
@@ -233,175 +219,149 @@ private fun SpeedHero(state: DashboardState) {
     val (_, statusColor) = fixStatusPresentation(state.fixStatus)
 
     Surface(
-        modifier = Modifier.fillMaxWidth().height(278.dp),
-        shape = RoundedCornerShape(28.dp),
+        modifier = modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
         color = MaterialTheme.colorScheme.surface,
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.62f)),
     ) {
-        Box(
-            Modifier.fillMaxSize().semantics {
-                contentDescription = "瞬时速度 ${speed?.let { String.format(Locale.US, "%.0f 公里每小时", it) } ?: "暂无数据"}"
-            },
+        Row(
+            modifier = Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 10.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
         ) {
-            Canvas(Modifier.fillMaxSize().padding(horizontal = 28.dp, vertical = 18.dp)) {
-                val stroke = 13.dp.toPx()
-                val arcSize = minOf(size.width, size.height * 1.42f)
-                val topLeft = Offset((size.width - arcSize) / 2f, 35.dp.toPx())
-                drawArc(
-                    color = statusColor.copy(alpha = 0.12f),
-                    startAngle = 150f,
-                    sweepAngle = 240f,
-                    useCenter = false,
-                    topLeft = topLeft,
-                    size = Size(arcSize, arcSize),
-                    style = Stroke(width = stroke, cap = StrokeCap.Round),
-                )
-                if (progress > 0f) {
+            Box(
+                Modifier
+                    .weight(0.47f)
+                    .fillMaxHeight()
+                    .semantics {
+                        contentDescription = "瞬时速度 ${speed?.let { String.format(Locale.US, "%.0f 公里每小时", it) } ?: "暂无数据"}"
+                    },
+            ) {
+                Canvas(Modifier.fillMaxSize().padding(horizontal = 2.dp, vertical = 8.dp)) {
+                    val stroke = 9.dp.toPx()
+                    val arcSize = minOf(size.width, size.height * 0.92f)
+                    val topLeft = Offset((size.width - arcSize) / 2f, (size.height - arcSize) / 2f)
                     drawArc(
-                        color = statusColor,
+                        color = statusColor.copy(alpha = 0.12f),
                         startAngle = 150f,
-                        sweepAngle = 240f * progress,
+                        sweepAngle = 240f,
                         useCenter = false,
                         topLeft = topLeft,
                         size = Size(arcSize, arcSize),
                         style = Stroke(width = stroke, cap = StrokeCap.Round),
                     )
+                    if (progress > 0f) {
+                        drawArc(
+                            color = statusColor,
+                            startAngle = 150f,
+                            sweepAngle = 240f * progress,
+                            useCenter = false,
+                            topLeft = topLeft,
+                            size = Size(arcSize, arcSize),
+                            style = Stroke(width = stroke, cap = StrokeCap.Round),
+                        )
+                    }
+                }
+                Column(
+                    modifier = Modifier.align(Alignment.Center),
+                    horizontalAlignment = Alignment.CenterHorizontally,
+                ) {
+                    Text("瞬时速度", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.52f), fontSize = 11.sp)
+                    Text(
+                        text = speed?.let { String.format(Locale.US, "%.0f", it) } ?: "--",
+                        color = when (state.fixStatus) {
+                            FixStatus.FIXED -> MaterialTheme.colorScheme.primary
+                            FixStatus.STALE -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.42f)
+                            else -> MaterialTheme.colorScheme.onSurface
+                        },
+                        fontSize = 72.sp,
+                        lineHeight = 74.sp,
+                        fontWeight = FontWeight.Black,
+                    )
+                    Text("km/h", color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.56f), fontSize = 14.sp, fontWeight = FontWeight.SemiBold)
+                    Text(
+                        text = state.bearingDegrees?.let { "${bearingName(it)} ${it.toInt()}°" } ?: "航向 --",
+                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.58f),
+                        fontSize = 11.sp,
+                        fontFamily = FontFamily.Monospace,
+                    )
                 }
             }
 
-            Column(
-                modifier = Modifier.align(Alignment.Center).padding(top = 10.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
-            ) {
-                Text(
-                    text = "瞬时速度",
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.52f),
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium,
-                )
-                Text(
-                    text = speed?.let { String.format(Locale.US, "%.0f", it) } ?: "--",
-                    color = when (state.fixStatus) {
-                        FixStatus.FIXED -> MaterialTheme.colorScheme.primary
-                        FixStatus.STALE -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.42f)
-                        else -> MaterialTheme.colorScheme.onSurface
-                    },
-                    fontSize = 106.sp,
-                    lineHeight = 108.sp,
-                    fontWeight = FontWeight.Black,
-                )
-                Text(
-                    text = "km/h",
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.56f),
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    letterSpacing = 1.2.sp,
-                )
-            }
+            Box(Modifier.width(1.dp).fillMaxHeight().background(MaterialTheme.colorScheme.outline.copy(alpha = 0.34f)))
 
-            Text(
-                text = state.bearingDegrees?.let { "${bearingName(it)}  ${it.toInt()}°" } ?: "航向 --",
-                modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 14.dp),
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.58f),
-                fontSize = 13.sp,
-                fontFamily = FontFamily.Monospace,
-            )
+            Column(
+                modifier = Modifier.weight(0.53f).fillMaxHeight(),
+                verticalArrangement = Arrangement.Center,
+            ) {
+                Row(verticalAlignment = Alignment.Top) {
+                    Column(Modifier.weight(1f)) {
+                        Text("当前行程", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.52f))
+                        Text(tripStatusText(state.tripMode), fontSize = 15.sp, fontWeight = FontWeight.Bold, color = tripStatusColor(state.tripMode))
+                        if (state.restoredTrip) {
+                            Text("已恢复", fontSize = 10.sp, color = PaceGreen, fontWeight = FontWeight.SemiBold)
+                        }
+                    }
+                    Text(
+                        DashboardViewModel.formatDuration(stats.elapsedMillis),
+                        fontSize = 17.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Bold,
+                    )
+                }
+                Spacer(Modifier.height(14.dp))
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text(
+                        distanceNumber(stats.distanceMeters),
+                        fontSize = 38.sp,
+                        lineHeight = 40.sp,
+                        fontFamily = FontFamily.Monospace,
+                        fontWeight = FontWeight.Black,
+                        color = PaceGreen,
+                    )
+                    Spacer(Modifier.width(5.dp))
+                    Text(distanceUnit(stats.distanceMeters), modifier = Modifier.padding(bottom = 4.dp), fontSize = 13.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.58f))
+                }
+                Spacer(Modifier.height(14.dp))
+                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                    TripTimeValue("移动", stats.movingMillis)
+                    TripTimeValue("停车", stats.stoppedMillis)
+                }
+            }
         }
     }
 }
 
 @Composable
-private fun TripOverview(state: DashboardState) {
-    val stats = state.tripStats
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surfaceVariant,
-        shape = RoundedCornerShape(22.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.56f)),
-    ) {
-        Column(Modifier.padding(18.dp)) {
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Column {
-                    Text("当前行程", fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.54f))
-                    Text(
-                        tripStatusText(state.tripMode),
-                        fontSize = 16.sp,
-                        fontWeight = FontWeight.Bold,
-                        color = tripStatusColor(state.tripMode),
-                    )
-                    if (state.restoredTrip) {
-                        Text(
-                            "已恢复上次行程",
-                            fontSize = 11.sp,
-                            color = PaceGreen,
-                            fontWeight = FontWeight.SemiBold,
-                        )
-                    }
-                }
-                Spacer(Modifier.weight(1f))
-                Text(
-                    DashboardViewModel.formatDuration(stats.elapsedMillis),
-                    fontSize = 20.sp,
-                    fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Bold,
-                )
-            }
-            Spacer(Modifier.height(14.dp))
-            Row(verticalAlignment = Alignment.Bottom) {
-                Text(
-                    distanceNumber(stats.distanceMeters),
-                    fontSize = 46.sp,
-                    lineHeight = 48.sp,
-                    fontFamily = FontFamily.Monospace,
-                    fontWeight = FontWeight.Black,
-                    color = PaceGreen,
-                )
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    distanceUnit(stats.distanceMeters),
-                    modifier = Modifier.padding(bottom = 7.dp),
-                    fontSize = 16.sp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.58f),
-                )
-                Spacer(Modifier.weight(1f))
-                Column(horizontalAlignment = Alignment.End) {
-                    Text("移动 ${DashboardViewModel.formatDuration(stats.movingMillis)}", fontSize = 12.sp)
-                    Text(
-                        "停车 ${DashboardViewModel.formatDuration(stats.stoppedMillis)}",
-                        fontSize = 12.sp,
-                        color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.56f),
-                    )
-                }
-            }
-        }
+private fun TripTimeValue(label: String, millis: Long) {
+    Column {
+        Text(label, fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.48f))
+        Text(DashboardViewModel.formatDuration(millis), fontSize = 11.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold)
     }
 }
 
 @Composable
 private fun RecentTripsCard(trips: List<CompletedTripRecord>) {
     Surface(
-        modifier = Modifier.fillMaxWidth(),
+        modifier = Modifier.fillMaxWidth().height(128.dp),
         color = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(14.dp),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.52f)),
     ) {
-        Column(Modifier.padding(16.dp)) {
+        Column(Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 8.dp)) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text("最近行程", fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                Text("最近行程", fontSize = 13.sp, fontWeight = FontWeight.Bold)
                 Spacer(Modifier.weight(1f))
                 Text(
                     "本地保存 ${trips.size} 段",
-                    fontSize = 11.sp,
+                    fontSize = 10.sp,
                     color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.48f),
                 )
             }
-            Spacer(Modifier.height(10.dp))
+            Spacer(Modifier.height(4.dp))
             if (trips.isEmpty()) {
-                Text(
-                    "结束第一段行程后，这里会保留最近记录。",
-                    fontSize = 13.sp,
-                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.58f),
-                )
+                Box(Modifier.fillMaxSize(), contentAlignment = Alignment.CenterStart) {
+                    Text("结束第一段行程后显示本地记录", fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.58f))
+                }
             } else {
                 trips.take(3).forEachIndexed { index, trip ->
                     RecentTripRow(trip)
@@ -417,111 +377,122 @@ private fun RecentTripsCard(trips: List<CompletedTripRecord>) {
 @Composable
 private fun RecentTripRow(trip: CompletedTripRecord) {
     Row(
-        modifier = Modifier.fillMaxWidth().padding(vertical = 9.dp),
+        modifier = Modifier.fillMaxWidth().height(27.dp),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Column(Modifier.weight(1f)) {
-            Text(
-                "${DashboardViewModel.formatDate(trip.startedAtMillis)} ${DashboardViewModel.formatTime(trip.startedAtMillis)}",
-                fontSize = 12.sp,
-                fontFamily = FontFamily.Monospace,
-                fontWeight = FontWeight.SemiBold,
-            )
-            Text(
-                "用时 ${DashboardViewModel.formatDuration(trip.stats.elapsedMillis)}",
-                fontSize = 11.sp,
-                color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.50f),
-            )
-        }
+        Text(
+            "${DashboardViewModel.formatDate(trip.startedAtMillis)} ${DashboardViewModel.formatTime(trip.startedAtMillis).take(5)}",
+            modifier = Modifier.weight(1f),
+            fontSize = 11.sp,
+            fontFamily = FontFamily.Monospace,
+            fontWeight = FontWeight.SemiBold,
+            maxLines = 1,
+        )
+        Text(
+            DashboardViewModel.formatDuration(trip.stats.elapsedMillis),
+            modifier = Modifier.width(68.dp),
+            textAlign = TextAlign.End,
+            fontSize = 11.sp,
+            fontFamily = FontFamily.Monospace,
+            color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.54f),
+            maxLines = 1,
+        )
         Text(
             "${distanceNumber(trip.stats.distanceMeters)} ${distanceUnit(trip.stats.distanceMeters)}",
-            fontSize = 18.sp,
+            modifier = Modifier.width(62.dp),
+            textAlign = TextAlign.End,
+            fontSize = 12.sp,
             fontFamily = FontFamily.Monospace,
             fontWeight = FontWeight.Bold,
             color = PaceGreen,
+            maxLines = 1,
         )
     }
 }
 
 @Composable
-private fun StatsGrid(state: DashboardState) {
+private fun StatsStrip(state: DashboardState) {
     val stats = state.tripStats
-    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            MetricCard("行程平均", "${DashboardViewModel.formatSpeed(stats.tripAverageMps)}", "km/h", Modifier.weight(1f))
-            MetricCard("移动平均", "${DashboardViewModel.formatSpeed(stats.movingAverageMps)}", "km/h", Modifier.weight(1f))
-        }
-        Row(horizontalArrangement = Arrangement.spacedBy(10.dp)) {
-            MetricCard("最高速度", "${DashboardViewModel.formatSpeed(stats.maxSpeedMps)}", "km/h", Modifier.weight(1f))
-            MetricCard("当前海拔", state.altitudeMeters?.let { it.toInt().toString() } ?: "--", "m", Modifier.weight(1f))
+    Surface(
+        modifier = Modifier.fillMaxWidth().height(84.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shape = RoundedCornerShape(14.dp),
+        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.52f)),
+    ) {
+        Row(Modifier.fillMaxSize().padding(horizontal = 6.dp, vertical = 10.dp)) {
+            MetricCell("行程平均", DashboardViewModel.formatSpeed(stats.tripAverageMps), "km/h", Modifier.weight(1f))
+            MetricDivider()
+            MetricCell("移动平均", DashboardViewModel.formatSpeed(stats.movingAverageMps), "km/h", Modifier.weight(1f))
+            MetricDivider()
+            MetricCell("最高速度", DashboardViewModel.formatSpeed(stats.maxSpeedMps), "km/h", Modifier.weight(1f))
+            MetricDivider()
+            MetricCell("海拔", state.altitudeMeters?.let { it.toInt().toString() } ?: "--", "m", Modifier.weight(1f))
         }
     }
 }
 
 @Composable
-private fun MetricCard(label: String, value: String, unit: String, modifier: Modifier = Modifier) {
+private fun MetricCell(label: String, value: String, unit: String, modifier: Modifier = Modifier) {
+    Column(modifier.fillMaxHeight(), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.Center) {
+        Text(label, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.52f), maxLines = 1)
+        Row(verticalAlignment = Alignment.Bottom) {
+            Text(value, fontSize = 22.sp, lineHeight = 24.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, maxLines = 1)
+            Spacer(Modifier.width(2.dp))
+            Text(unit, modifier = Modifier.padding(bottom = 2.dp), fontSize = 9.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.50f), maxLines = 1)
+        }
+    }
+}
+
+@Composable
+private fun MetricDivider() {
+    Box(Modifier.width(1.dp).fillMaxHeight().padding(vertical = 5.dp).background(MaterialTheme.colorScheme.outline.copy(alpha = 0.34f)))
+}
+
+@Composable
+private fun TelemetryStrip(state: DashboardState) {
     Surface(
-        modifier = modifier.height(94.dp),
+        modifier = Modifier.fillMaxWidth().height(96.dp),
         color = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(18.dp),
+        shape = RoundedCornerShape(14.dp),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.52f)),
     ) {
-        Column(Modifier.padding(horizontal = 14.dp, vertical = 12.dp)) {
-            Text(label, fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.52f))
-            Spacer(Modifier.weight(1f))
-            Row(verticalAlignment = Alignment.Bottom) {
-                Text(value, fontSize = 28.sp, lineHeight = 30.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
+        Column(Modifier.fillMaxSize().padding(horizontal = 12.dp, vertical = 10.dp), verticalArrangement = Arrangement.SpaceBetween) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(Icons.Default.LocationOn, contentDescription = null, tint = MaterialTheme.colorScheme.primary, modifier = Modifier.size(16.dp))
                 Spacer(Modifier.width(5.dp))
-                Text(unit, modifier = Modifier.padding(bottom = 3.dp), fontSize = 11.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.52f))
-            }
-        }
-    }
-}
-
-@Composable
-private fun LocationDetails(state: DashboardState, expanded: Boolean, onToggle: () -> Unit) {
-    Surface(
-        modifier = Modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.surface,
-        shape = RoundedCornerShape(18.dp),
-        border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.52f)),
-    ) {
-        Column {
-            TextButton(
-                onClick = onToggle,
-                modifier = Modifier.fillMaxWidth().height(52.dp),
-            ) {
-                Icon(Icons.Default.LocationOn, contentDescription = null)
-                Spacer(Modifier.width(8.dp))
-                Text("定位详情", fontWeight = FontWeight.Bold)
-                Spacer(Modifier.weight(1f))
-                Text(if (expanded) "收起" else "展开", fontSize = 12.sp)
-                Icon(
-                    imageVector = if (expanded) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                    contentDescription = if (expanded) "收起定位详情" else "展开定位详情",
+                Text(
+                    "经纬度",
+                    fontSize = 10.sp,
+                    color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.46f),
                 )
+                Spacer(Modifier.width(6.dp))
+                Text(
+                    coordinateText(state),
+                    modifier = Modifier.weight(1f),
+                    fontSize = 11.sp,
+                    fontFamily = FontFamily.Monospace,
+                    fontWeight = FontWeight.SemiBold,
+                    maxLines = 1,
+                )
+                TelemetryValue("更新", locationAgeText(state))
             }
-            AnimatedVisibility(expanded) {
-                Column(Modifier.padding(start = 16.dp, end = 16.dp, bottom = 16.dp)) {
-                    HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.44f))
-                    Spacer(Modifier.height(12.dp))
-                    DetailRow("经纬度", coordinateText(state))
-                    DetailRow("定位更新", state.lastFixAtMillis?.let { "${((state.nowMillis - it).coerceAtLeast(0L) / 100L) / 10.0} 秒前" } ?: "未提供")
-                    DetailRow("精度因子", "PDOP ${formatDecimal(state.pdop)}  ·  HDOP ${formatDecimal(state.hdop)}  ·  VDOP ${formatDecimal(state.vdop)}")
-                    DetailRow("NMEA", state.lastNmeaType?.toString() ?: "未提供", last = true)
-                }
+            HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.28f))
+            Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                TelemetryValue("位置因子", formatDecimal(state.pdop))
+                TelemetryValue("水平因子", formatDecimal(state.hdop))
+                TelemetryValue("垂直因子", formatDecimal(state.vdop))
+                TelemetryValue("报文类型", state.lastNmeaType?.toString() ?: "--")
             }
         }
     }
 }
 
 @Composable
-private fun DetailRow(label: String, value: String, last: Boolean = false) {
-    Row(Modifier.fillMaxWidth().padding(vertical = 7.dp), verticalAlignment = Alignment.Top) {
-        Text(label, modifier = Modifier.width(78.dp), fontSize = 12.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.52f))
-        Text(value, modifier = Modifier.weight(1f), textAlign = TextAlign.End, fontSize = 13.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Medium)
+private fun TelemetryValue(label: String, value: String) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        Text("$label ", fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.46f))
+        Text(value, fontSize = 11.sp, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.SemiBold, maxLines = 1)
     }
-    if (!last) HorizontalDivider(color = MaterialTheme.colorScheme.outline.copy(alpha = 0.24f))
 }
 
 @Composable
@@ -533,19 +504,19 @@ private fun MobileControlBar(
     modifier: Modifier = Modifier,
 ) {
     Surface(
-        modifier = modifier.fillMaxWidth(),
-        color = MaterialTheme.colorScheme.background.copy(alpha = 0.98f),
+        modifier = modifier.fillMaxWidth().height(72.dp),
+        color = MaterialTheme.colorScheme.surfaceVariant,
+        shape = RoundedCornerShape(14.dp),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outline.copy(alpha = 0.44f)),
-        shadowElevation = 12.dp,
     ) {
         Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            modifier = Modifier.fillMaxSize().padding(5.dp),
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
         ) {
             if (state.fixStatus == FixStatus.PERMISSION_REQUIRED) {
                 Button(
                     onClick = onRequestPermission,
-                    modifier = Modifier.fillMaxWidth().height(58.dp),
+                    modifier = Modifier.fillMaxSize(),
                 ) {
                     Icon(Icons.Default.LocationOn, contentDescription = null)
                     Spacer(Modifier.width(8.dp))
@@ -554,7 +525,7 @@ private fun MobileControlBar(
             } else {
                 Button(
                     onClick = onToggleTrip,
-                    modifier = Modifier.weight(1f).height(58.dp),
+                    modifier = Modifier.weight(1f).fillMaxHeight(),
                 ) {
                     Icon(
                         imageVector = if (state.tripMode == TripMode.RECORDING) Icons.Default.Pause else Icons.Default.PlayArrow,
@@ -574,7 +545,8 @@ private fun MobileControlBar(
                 if (state.tripMode != TripMode.IDLE) {
                     FilledTonalButton(
                         onClick = onRequestEnd,
-                        modifier = Modifier.width(104.dp).height(58.dp),
+                        modifier = Modifier.width(112.dp).fillMaxHeight(),
+                        contentPadding = PaddingValues(horizontal = 10.dp),
                         colors = ButtonDefaults.filledTonalButtonColors(
                             containerColor = MaterialTheme.colorScheme.error.copy(alpha = 0.14f),
                             contentColor = MaterialTheme.colorScheme.error,
@@ -582,7 +554,7 @@ private fun MobileControlBar(
                     ) {
                         Icon(Icons.Default.Stop, contentDescription = null)
                         Spacer(Modifier.width(4.dp))
-                        Text("结束", fontWeight = FontWeight.Bold)
+                        Text("结束", fontWeight = FontWeight.Bold, maxLines = 1)
                     }
                 }
             }
@@ -643,6 +615,10 @@ private fun coordinateText(state: DashboardState): String =
     } else {
         "未提供"
     }
+
+private fun locationAgeText(state: DashboardState): String = state.lastFixAtMillis?.let {
+    "${((state.nowMillis - it).coerceAtLeast(0L) / 100L) / 10.0}s"
+} ?: "--"
 
 private fun distanceNumber(meters: Double): String =
     if (meters < 1_000.0) meters.toInt().toString() else String.format(Locale.US, "%.2f", meters / 1_000.0)
