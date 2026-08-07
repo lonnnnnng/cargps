@@ -1,0 +1,16 @@
+# 车机版资料索引
+
+本目录只保存 CarGPS 车机版的产品、技术和发布文档。目标设备固定为 `CASKA_1024x600`，Android 8.1 / API 27，1024x600 横屏。
+
+## 产品与技术
+
+- [产品规格](./product-spec.md)：车机信息层级、状态、交互和 CASKA 验收口径。
+- [技术设计](./technical-design.md)：API 27 定位实现、数据流、模块 seam、持久化和测试重点。
+- [ADR-0001](./adr/0001-use-platform-locationmanager.md)：采用系统 `LocationManager` 作为唯一定位主来源。
+
+## 发布记录
+
+- [v0.1.0](./release-notes-v0.1.0.md)：首个车机正式版本。
+- [v0.1.1](./release-notes-v0.1.1.md)：拆分前联合发布版本中的车机侧记录，车机 UI 行为保持不变。
+
+截图、UI Automator XML、APK 和 `SHA256SUMS` 不放在文档目录，统一归档于 [artifacts](../artifacts/README.md)。当前拆分后验证截图为 [cargps-split-car.png](../artifacts/cargps-split-car.png)。

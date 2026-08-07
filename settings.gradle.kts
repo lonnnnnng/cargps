@@ -17,4 +17,3 @@ dependencyResolutionManagement {
 rootProject.name = "CarGps"
 include(":gps-core")
 include(":car-app")
-include(":mobile-app")
