@@ -2,6 +2,8 @@
 
 CarGPS 车机版是面向 1024x600 横屏车机的离线 GPS 仪表，不依赖地图服务或 Google Play Services。手机版已拆分为独立项目，本项目只维护车机应用及其独立定位核心。
 
+手机版独立仓库：[lonnnnnng/cargps-mobile](https://github.com/lonnnnnng/cargps-mobile)
+
 ## 工程结构
 
 ```text
