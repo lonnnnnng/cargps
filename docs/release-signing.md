@@ -23,3 +23,5 @@ unset ANDROID_SIGNING_KEY_ALIAS ANDROID_SIGNING_KEY_PASSWORD
 ```
 
 发布前验证 `app/build/outputs/apk/release/app-release.apk` 的证书指纹与本文一致。密钥库与口令备份均保存在本机 `~/.config/cargps/` 下，权限为当前用户独占；绝不把 `.p12`、口令文件或其副本加入仓库或 Release。
+
+Release 从 v0.1.4 起启用 R8 和资源压缩。每次发布应将 `app/build/outputs/mapping/release/` 与该版 APK 一同归档到本机 `artifacts/release-v<版本>/mapping/`，以便用对应的 `mapping.txt` 还原崩溃堆栈。映射文件不作为公开下载附件。

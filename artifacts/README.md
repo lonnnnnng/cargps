@@ -4,6 +4,7 @@
 
 ## 当前验证
 
+- `release-v0.1.4/`：体积优化 Release APK、公开证书和校验文件；`mapping/` 保存该包的 R8 映射与报告，供崩溃堆栈还原；映射文件不上传公开 Release。
 - `release-v0.1.3/`：单模块 GPS 车机版 APK 与校验文件，使用现有专用 Release 密钥。
 - `release-v0.1.2/`：v0.1.2 车机 Release APK、公开签名证书与 `SHA256SUMS`；APK 使用 CarGPS 专用发布密钥签名。旧调试签名包留存在 `previous-debug-signed/`，不再作为 Release 附件。
 - `ui-redesign-20261126/`：本轮调试 APK、SHA256SUMS、API 27/28 离线原生渲染及测试/Lint 报告。

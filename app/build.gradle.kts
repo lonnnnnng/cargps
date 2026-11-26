@@ -20,8 +20,8 @@ android {
         applicationId = "com.lonng.cargps"
         minSdk = 27
         targetSdk = 34
-        versionCode = 4
-        versionName = "0.1.3"
+        versionCode = 5
+        versionName = "0.1.4"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -40,7 +40,10 @@ android {
 
     buildTypes {
         release {
-            isMinifyEnabled = false
+            // 作者：long｜移除车机未使用的图标与依赖代码，避免完整扩展图标库进入安装包。
+            isMinifyEnabled = true
+            isShrinkResources = true
+            proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"))
             if (hasReleaseSigning) {
                 signingConfig = signingConfigs.getByName("release")
             }

@@ -2,9 +2,11 @@
 
 GPS 是面向 1024×600 横屏车机的离线 GPS 仪表，不依赖地图服务或 Google Play Services。本仓库只维护一个车机 Android 应用模块。
 
-当前版本：[v0.1.3](https://github.com/lonnnnnng/cargps/releases/tag/v0.1.3) · [更新说明](./docs/release-notes-v0.1.3.md)
+当前版本：[v0.1.4](https://github.com/lonnnnnng/cargps/releases/tag/v0.1.4) · [更新说明](./docs/release-notes-v0.1.4.md)
 
-[下载 GPS-Car-v0.1.3.apk](https://github.com/lonnnnnng/cargps/releases/download/v0.1.3/GPS-Car-v0.1.3.apk) · [SHA-256 校验文件](https://github.com/lonnnnnng/cargps/releases/download/v0.1.3/SHA256SUMS)
+[下载 GPS-Car-v0.1.4.apk](https://github.com/lonnnnnng/cargps/releases/download/v0.1.4/GPS-Car-v0.1.4.apk) · [SHA-256 校验文件](https://github.com/lonnnnnng/cargps/releases/download/v0.1.4/SHA256SUMS)
+
+Release 安装包约 **0.87 MiB**，比 v0.1.3 缩小约 **91.5%**；使用 R8 与资源压缩移除未使用的代码和资源。
 
 ## 工程结构
 
@@ -50,7 +52,7 @@ Kotlin 源码位于 `app/src/main/java/com/lonng/cargps/`，按 `ui`、`domain`�
 - [产品规格](./docs/product-spec.md)
 - [Android 技术设计](./docs/technical-design.md)
 - [ADR-0001：采用系统 LocationManager](./docs/adr/0001-use-platform-locationmanager.md)
-- [v0.1.3 更新说明](./docs/release-notes-v0.1.3.md)
+- [v0.1.4 更新说明](./docs/release-notes-v0.1.4.md)
 - [界面改造与验证记录](./docs/ui-redesign-20261126.md)
 - [界面规则](./DESIGN.md)
 - [正式签名与构建](./docs/release-signing.md)
@@ -85,4 +87,4 @@ Kotlin 源码位于 `app/src/main/java/com/lonng/cargps/`，按 `ui`、`domain`�
 ./gradlew :app:lintRelease :app:assembleRelease
 ```
 
-输出为 `app/build/outputs/apk/release/app-release.apk`，发布附件名称为 `GPS-Car-v0.1.3.apk`。Release 使用专用 RSA 发布密钥；密钥与口令不进入仓库。
+输出为 `app/build/outputs/apk/release/app-release.apk`，发布附件名称为 `GPS-Car-v0.1.4.apk`。Release 使用专用 RSA 发布密钥；密钥与口令不进入仓库。
