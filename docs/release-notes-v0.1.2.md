@@ -28,4 +28,7 @@
 - `CarGPS-Car-v0.1.2.apk`：包名 `com.cargps`，版本代码 `3`，最低 Android 8.1（API 27）。
 - `SHA256SUMS`：安装包 SHA-256 校验文件。
 
-安装包为 Release 变体、不可调试，使用本机 Android 调试证书签名。本次不验证与旧安装包的覆盖升级兼容性。
+安装包为不可调试的 Release 变体，使用 CarGPS 专用发布密钥签名。正式签名 APK 已替换本版本最初上传的调试签名附件；本次不检查覆盖升级兼容性。
+
+签名证书 SHA-256：`53c39ba74f18bc02f6506154a6beec63673a16d73ebf83e9bed47704ffd9b86e`。
+公开证书文件：`CarGPS-Release-Certificate.pem`；APK 和公开证书的 SHA-256 均列于 `SHA256SUMS`。未来版本继续使用同一私钥；签名设置见 [车机发布签名](./release-signing.md)。

@@ -4,7 +4,7 @@
 
 ## 当前验证
 
-- `release-v0.1.2/`：v0.1.2 车机 Release APK 与 `SHA256SUMS`；使用本机 Android 调试证书签名，未验证覆盖升级。
+- `release-v0.1.2/`：v0.1.2 车机 Release APK、公开签名证书与 `SHA256SUMS`；APK 使用 CarGPS 专用发布密钥签名。旧调试签名包留存在 `previous-debug-signed/`，不再作为 Release 附件。
 - `ui-redesign-20261126/`：本轮调试 APK、SHA256SUMS、API 27/28 离线原生渲染及测试/Lint 报告。
 - `night.png` / `day-searching.png` / `large-font.png`：从 API 27 原生渲染图裁取的 1024×528 应用内容区。使用测试数据，非道路实测。
 - `api-27/` 与 `api-28/`：Robolectric 原始图，外部灰色区域属于测试宿主背景，不是车机系统栏。
