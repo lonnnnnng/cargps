@@ -1,79 +1,105 @@
-# GPS 车机版
+# GPS
 
-GPS 是面向 1024×600 横屏车机的离线 GPS 仪表，不依赖地图服务或 Google Play Services。本仓库只维护一个车机 Android 应用模块。
+面向 Android 车机的离线速度与行程仪表，为 **1024×600 横屏、Android 8.1** 设计。主屏突出瞬时速度和时分秒，日期独立分色，行程数据集中显示，方便一眼读取。
 
-当前版本：[v0.1.4](https://github.com/lonnnnnng/cargps/releases/tag/v0.1.4) · [更新说明](./docs/release-notes-v0.1.4.md)
+使用车机自带的 GPS / 北斗定位能力，无需账号、地图服务或 Google Play Services。本仓库只维护车机应用。
 
-[下载 GPS-Car-v0.1.4.apk](https://github.com/lonnnnnng/cargps/releases/download/v0.1.4/GPS-Car-v0.1.4.apk) · [SHA-256 校验文件](https://github.com/lonnnnnng/cargps/releases/download/v0.1.4/SHA256SUMS)
+[下载正式版](https://github.com/lonnnnnng/cargps/releases/latest) · [版本说明](docs/release-notes-v0.1.4.md) · [开发文档](docs/README.md)
 
-Release 安装包约 **0.87 MiB**，比 v0.1.3 缩小约 **91.5%**；使用 R8 与资源压缩移除未使用的代码和资源。
+## 界面预览
 
-## 工程结构
+![GPS 车机夜间仪表效果图：左侧为瞬时速度，右侧为分色显示的日期与时间，下方为行程统计和操作按钮](docs/images/night.png)
+
+> 夜间模式效果图，使用示例数据。图片中的 `CarGPS` 是更名前的名称，当前应用名称为 `GPS`；预览内容区为 1024×528。
+
+瞬时速度使用最大字号；时分秒以青色突出显示，年月日以琥珀色单独呈现。主屏保留方向、海拔、经纬度与定位更新时间，卫星数量和诊断指标收在「定位详情」中。支持日间与夜间模式切换。
+
+## 下载与安装
+
+当前正式版为 **v0.1.4**，APK 大小约 **0.87 MiB**，使用正式发布证书签名。
+
+| 文件 | 用途 |
+| --- | --- |
+| [GPS-Car-v0.1.4.apk](https://github.com/lonnnnnng/cargps/releases/download/v0.1.4/GPS-Car-v0.1.4.apk) | 车机安装包 |
+| [SHA256SUMS](https://github.com/lonnnnnng/cargps/releases/download/v0.1.4/SHA256SUMS) | 下载文件的 SHA-256 校验值 |
+| [GPS-Release-Certificate.pem](https://github.com/lonnnnnng/cargps/releases/download/v0.1.4/GPS-Release-Certificate.pem) | 公开签名证书 |
+
+将 APK 复制到车机，通过文件管理器安装。首次打开时授予定位权限，并开启系统定位开关；卫星定位需要车机具有相应的 GNSS 硬件和天线。
+
+| 项目 | 要求或说明 |
+| --- | --- |
+| Android 版本 | 8.1（API 27）及以上 |
+| 目标屏幕 | 1024×600，横屏；以 CASKA 车机、160 dpi 为适配基准 |
+| 卫星系统 | GPS / 北斗，实际支持范围取决于车机硬件和系统驱动 |
+| 网络 | 使用时无需联网 |
+| 应用名称 / 包名 | `GPS` / `com.lonng.cargps` |
+
+## 主要功能
+
+| 功能 | 说明 |
+| --- | --- |
+| 速度仪表 | 瞬时速度、行程平均速度、移动平均速度、最高速度 |
+| 日期与时钟 | 显示到秒，年月日独立排版，按车机系统时间与时区显示 |
+| 行程记录 | 开始、暂停、继续、结束；结束前确认，减少误触 |
+| 行程统计 | 本次里程、总时长、移动时长、停车时长 |
+| 定位信息 | 经纬度、海拔、方向、定位状态、精度与更新时间 |
+| 定位详情 | GPS / 北斗可见与参与定位数量，以及 HDOP、PDOP、VDOP、NMEA 诊断信息；可用数据以设备上报为准 |
+| 本地保存 | 使用 SQLite 保存行程，进程重启后可恢复未结束的行程 |
+
+指标保留常用写法，如 GPS、北斗、HDOP、PDOP、VDOP；速度、距离和海拔使用 `km/h`、`km`、`m`。
+
+## 使用方法
+
+1. 打开应用，确认定位权限已授予、系统定位已开启，等待定位状态正常。
+2. 点击「开始行程」，开始累计本次里程、时间与速度统计。
+3. 需要中断记录时点击「暂停行程」，返回后继续；点击「定位详情」查看卫星与定位质量。
+4. 行程完成后点击「结束」并确认，保存本次记录。
+
+**当前仅在应用处于前台时采集和记录定位。** 切换到其他应用或进入后台后会停止采集，返回后继续；暂停、定位中断和后台切换处会划分路段，避免把中断期间的位移直接连成有效里程。
+
+行程数据保存在车机本地，应用不申请网络权限，也不会上传位置。当前版本尚未提供历史行程浏览、轨迹导出、地图导航或后台持续记录功能。
+
+## 开发与构建
+
+项目使用 **Kotlin + Jetpack Compose**，通过 Android 系统 `LocationManager` 获取定位、GNSS 卫星状态和 NMEA 数据，使用 SQLite 持久化行程。统计采用增量计算，界面只在可见时按秒刷新。
+
+### 工程结构
+
+所有源码和测试集中在唯一的 `app` 模块中：
 
 ```text
 cargps/
-├── app/           # 唯一应用模块，包名 com.lonng.cargps
+├── app/
+│   ├── build.gradle.kts
 │   └── src/
 │       ├── main/
-│       ├── test/
-│       └── androidTest/
-├── docs/
-├── gradle/
+│       │   ├── AndroidManifest.xml
+│       │   ├── java/com/lonng/cargps/
+│       │   │   ├── MainActivity.kt
+│       │   │   ├── DashboardViewModel.kt
+│       │   │   ├── LocationEngine.kt
+│       │   │   ├── ui/          # 仪表界面与主题
+│       │   │   ├── domain/      # 定位质量、NMEA 与行程统计
+│       │   │   └── storage/     # 本地行程存储
+│       │   └── res/
+│       ├── test/               # 本地单元测试与离线界面测试
+│       └── androidTest/        # 设备仪器测试
+├── docs/                       # 产品、技术、发布文档与展示图片
+├── gradle/wrapper/
 ├── gradlew
 └── settings.gradle.kts
 ```
 
-界面、定位、行程统计、SQLite 存储和测试统一放在 `app/src/`，namespace 与 applicationId 均为 `com.lonng.cargps`。
+### 环境准备
 
-Kotlin 源码位于 `app/src/main/java/com/lonng/cargps/`，按 `ui`、`domain`、`storage` 组织职责，不再拆成独立 Gradle 库模块。
+- JDK 17。
+- Android SDK Platform 34，`compileSdk` / `targetSdk` 均为 34，`minSdk` 为 27。
+- 使用仓库内的 Gradle Wrapper（8.7），无需单独安装 Gradle。
+- 在本机 `local.properties` 中配置 `sdk.dir`，或设置 `ANDROID_HOME`；本机路径不提交到仓库。首次构建需要联网下载依赖。
 
-## 车机版目标设备
+### 调试与验证
 
-- 目标车机：CASKA
-- Android：8.1.0（API 27）
-- 屏幕：1024×600、160 dpi、横屏
-- 本轮使用 Robolectric 在本机验证 API 27/28；当前没有车机模拟器，实车验证需连接目标设备。
-
-## 主要能力
-
-- 显示瞬时速度、本次行程平均速度、移动平均速度和最高速度。
-- 显示时间、经纬度、海拔、方向、定位精度、卫星数量和定位更新时间。
-- 支持开始、暂停、继续、结束行程，并统计里程、总时长、移动时长和停车时长。
-- 解析 GNSS NMEA 报文，补充定位质量与诊断信息。
-- 本地保存行程，断网可用，不把定位数据上传到服务器。
-- 提供 1024x600 横屏、大字号、高对比度、少操作的驾驶仪表。
-- 主屏突出瞬时速度和时分秒；年月日单独分色，GPS/北斗数量和 DOP 移入定位详情。
-- 增量计算行程统计，暂停/恢复与后台切换保存路段边界；诊断数据独立过期。
-
-## 文档与验证资料
-
-- [领域词汇](./CONTEXT.md)
-- [资料索引](./docs/README.md)
-- [产品规格](./docs/product-spec.md)
-- [Android 技术设计](./docs/technical-design.md)
-- [ADR-0001：采用系统 LocationManager](./docs/adr/0001-use-platform-locationmanager.md)
-- [v0.1.4 更新说明](./docs/release-notes-v0.1.4.md)
-- [界面改造与验证记录](./docs/ui-redesign-20261126.md)
-- [界面规则](./DESIGN.md)
-- [正式签名与构建](./docs/release-signing.md)
-- [截图、UI 树与发布产物说明](./artifacts/README.md)
-
-## 当前阶段
-
-已完成可独立构建的车机应用：
-
-- `app`：唯一 Gradle 模块，包含车机界面、定位、NMEA、质量门、速度平滑、行程统计和存储。
-- 桌面名称与仪表顶部名称均为 `GPS`。
-- Android 8.1 / API 27 系统定位权限与 `GPS_PROVIDER` 接入。
-- API 27 可用的 NMEA、GNSS 卫星状态监听，并在详情中分别显示 GPS/北斗卫星数量。
-- 定位质量门、速度平滑、行程开始/暂停/继续/结束及实时统计。
-- GGA、RMC、GSA、GSV、VTG、ZDA 基础解析与校验和验证。
-- 使用本地 SQLite 增量保存活动行程点、暂停状态和已结束行程统计/轨迹；进程重建后可恢复活动行程。
-- 车机版在恢复活动行程后明确标记“已恢复”。
-- 本轮已完成离线原生界面、核心单元测试、Lint 与 Release APK 构建；未安装到真实车机。
-- 合并后的 `:app:testDebugUnitTest` 共 40 项通过；数据库仪器测试 APK 已编译打包，未在设备上运行。
-
-## 常用验证命令
+在仓库根目录执行：
 
 ```zsh
 ./gradlew :app:testDebugUnitTest
@@ -81,10 +107,26 @@ Kotlin 源码位于 `app/src/main/java/com/lonng/cargps/`，按 `ui`、`domain`�
 ./gradlew :app:lintDebug :app:assembleDebug
 ```
 
-按照[正式签名说明](./docs/release-signing.md)设置本机签名环境后，执行：
+调试 APK 输出至 `app/build/outputs/apk/debug/app-debug.apk`。`compileDebugAndroidTestKotlin` 只编译仪器测试代码，不代表测试已在设备上运行。
+
+### 正式版构建
+
+按照[正式签名说明](docs/release-signing.md)配置签名环境后执行：
 
 ```zsh
 ./gradlew :app:lintRelease :app:assembleRelease
 ```
 
-输出为 `app/build/outputs/apk/release/app-release.apk`，发布附件名称为 `GPS-Car-v0.1.4.apk`。Release 使用专用 RSA 发布密钥；密钥与口令不进入仓库。
+正式 APK 输出至 `app/build/outputs/apk/release/app-release.apk`。Release 启用 R8 代码优化与资源压缩；发布时应在本地归档 `app/build/outputs/mapping/release/`，用于还原对应版本的崩溃堆栈。签名私钥、口令和混淆映射不作为公开附件。
+
+v0.1.4 已通过 40 项本地回归测试、Release 构建、Lint 和签名校验；本地测试不执行 R8 压缩后的 APK，压缩版仍需真实车机验证定位与道路表现。详细范围见[版本说明](docs/release-notes-v0.1.4.md)。
+
+## 项目文档
+
+- [产品规格](docs/product-spec.md)：功能范围、交互与验收标准。
+- [技术设计](docs/technical-design.md)：定位数据流、统计与持久化。
+- [界面规则](DESIGN.md)：布局、字号与颜色规范。
+- [领域词汇](CONTEXT.md)：行程与定位指标的统一定义。
+- [定位方案决策](docs/adr/0001-use-platform-locationmanager.md)：选择系统 `LocationManager` 的原因。
+- [界面改造与验证记录](docs/ui-redesign-20261126.md)：本次车机适配的实现与验证范围。
+- [完整文档索引](docs/README.md)：版本记录、签名说明及其他资料。

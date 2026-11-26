@@ -18,4 +18,4 @@
 - [v0.1.0](./release-notes-v0.1.0.md)：首个车机正式版本。
 - [v0.1.1](./release-notes-v0.1.1.md)：拆分前联合发布版本中的车机侧记录，车机 UI 行为保持不变。
 
-截图、UI Automator XML、APK 和 `SHA256SUMS` 不放在文档目录，统一归档于 [artifacts](../artifacts/README.md)。本轮原生离线预览位于 `artifacts/ui-redesign-20261126/`。
+项目首页使用的[夜间效果图](images/night.png)保存在 `docs/images/`，随源码提交，供 README 展示。完整验证截图、UI Automator XML、APK 和 `SHA256SUMS` 统一归档于 [artifacts](../artifacts/README.md)；本轮原生离线预览位于 `artifacts/ui-redesign-20261126/`。
