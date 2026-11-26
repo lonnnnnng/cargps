@@ -24,7 +24,14 @@ class LocationEngine(
         fun onProviderDisabled()
         fun onSearching()
         fun onLocation(location: Location)
-        fun onSatellitesChanged(inView: Int, usedInFix: Int)
+        fun onSatellitesChanged(
+            inView: Int,
+            usedInFix: Int,
+            gpsInView: Int,
+            gpsUsedInFix: Int,
+            beidouInView: Int,
+            beidouUsedInFix: Int,
+        )
         fun onNmea(frame: NmeaFrame)
     }
 
@@ -55,10 +62,34 @@ class LocationEngine(
     private val gnssCallback = object : GnssStatus.Callback() {
         override fun onSatelliteStatusChanged(status: GnssStatus) {
             var usedInFix = 0
+            var gpsInView = 0
+            var gpsUsedInFix = 0
+            var beidouInView = 0
+            var beidouUsedInFix = 0
             repeat(status.satelliteCount) { index ->
-                if (status.usedInFix(index)) usedInFix += 1
+                val used = status.usedInFix(index)
+                if (used) usedInFix += 1
+                when (status.getConstellationType(index)) {
+                    GnssStatus.CONSTELLATION_GPS -> {
+                        gpsInView += 1
+                        if (used) gpsUsedInFix += 1
+                    }
+
+                    GnssStatus.CONSTELLATION_BEIDOU -> {
+                        beidouInView += 1
+                        if (used) beidouUsedInFix += 1
+                    }
+                }
             }
-            listener.onSatellitesChanged(status.satelliteCount, usedInFix)
+            // 作者：long｜分别汇报星座数量，避免混合 GNSS 的总数掩盖 GPS 与北斗各自的参与情况。
+            listener.onSatellitesChanged(
+                inView = status.satelliteCount,
+                usedInFix = usedInFix,
+                gpsInView = gpsInView,
+                gpsUsedInFix = gpsUsedInFix,
+                beidouInView = beidouInView,
+                beidouUsedInFix = beidouUsedInFix,
+            )
         }
     }
 

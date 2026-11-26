@@ -6,11 +6,13 @@
 
 - [产品规格](./product-spec.md)：车机信息层级、状态、交互和 CASKA 验收口径。
 - [技术设计](./technical-design.md)：API 27 定位实现、数据流、模块 seam、持久化和测试重点。
+- [2026-11-26 界面改造与验证](./ui-redesign-20261126.md)：速度与时钟主屏、性能优化、验证范围与产物。
 - [ADR-0001](./adr/0001-use-platform-locationmanager.md)：采用系统 `LocationManager` 作为唯一定位主来源。
 
 ## 发布记录
 
+- [v0.1.2](./release-notes-v0.1.2.md)：车机主屏重设计、定位诊断及行程性能优化。
 - [v0.1.0](./release-notes-v0.1.0.md)：首个车机正式版本。
 - [v0.1.1](./release-notes-v0.1.1.md)：拆分前联合发布版本中的车机侧记录，车机 UI 行为保持不变。
 
-截图、UI Automator XML、APK 和 `SHA256SUMS` 不放在文档目录，统一归档于 [artifacts](../artifacts/README.md)。当前拆分后验证截图为 [cargps-split-car.png](../artifacts/cargps-split-car.png)。
+截图、UI Automator XML、APK 和 `SHA256SUMS` 不放在文档目录，统一归档于 [artifacts](../artifacts/README.md)。本轮原生离线预览位于 `artifacts/ui-redesign-20261126/`。

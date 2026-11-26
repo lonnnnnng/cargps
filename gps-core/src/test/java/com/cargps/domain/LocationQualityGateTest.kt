@@ -38,6 +38,13 @@ class LocationQualityGateTest {
     }
 
     @Test
+    fun `stale sample gap does not bridge even before lost threshold`() {
+        val decision = gate.evaluate(sample(1_000L), sample(4_001L, latitude = 23.001))
+        assertTrue(decision.displayable)
+        assertFalse(decision.connectsToPrevious)
+    }
+
+    @Test
     fun `out of order timestamp is not displayable`() {
         val previous = sample(timestampMillis = 2_000L)
         val current = sample(timestampMillis = 1_000L)

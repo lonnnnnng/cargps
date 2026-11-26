@@ -34,6 +34,7 @@ flowchart LR
 - 位置更新：`LocationManager.requestLocationUpdates(LocationManager.GPS_PROVIDER, ...)`。
 - NMEA：使用 API 24 已提供的 `addNmeaListener(OnNmeaMessageListener, Handler)`，不要使用 API 30 才加入的 `Executor` 重载。
 - 卫星状态：使用 `registerGnssStatusCallback(GnssStatus.Callback, Handler)`，不要继续使用 API 24 已废弃的 `GpsStatus.Listener`。
+- 星座识别：使用 API 24 提供的 `GnssStatus.getConstellationType()`，分别统计 GPS 与北斗可见/参与定位数量；目标车机是否持续上报需在硬件上验收。
 - 权限：NMEA 与 GNSS 详细状态需要 `android.permission.ACCESS_FINE_LOCATION`；运行时授权失败时进入“未授权”状态。
 - 数据字段：在读取速度、海拔、方向和精度前分别检查 `hasSpeed()`、`hasAltitude()`、`hasBearing()` 和 `hasAccuracy()`，缺失值保持为空。
 
@@ -57,6 +58,7 @@ flowchart LR
 - `location-quality`：位于 `gps-core`，判断样本是否可显示、是否可累计、是否发生过期或断点。
 - `speed-estimator`：位于 `gps-core`，处理速度来源选择、单位转换、异常值过滤和平滑。
 - `trip-domain`：位于 `gps-core`，处理活动行程状态机、距离和时间统计，不直接依赖 Android UI。
+- 活动行程统计通过逐点累计器维护距离、移动时长和最高速度，时钟刷新不再遍历完整轨迹；恢复行程时只重建一次累计器。
 - `trip-storage`：活动行程快照、已结束行程与轨迹点的本地持久化。
 - `dashboard-ui`：车机界面只消费 `gps-core` 提供的只读仪表状态，不自行计算业务统计。
 
@@ -74,6 +76,7 @@ flowchart LR
 - 当前使用 API 27 原生 `SQLiteOpenHelper`，由 `TripStorage` 隔离存储实现；领域与 UI 不依赖 SQLite 类型。
 - SQLite 写入统一进入单线程后台队列；读取作为队列屏障等待此前写入完成，避免 GPS 主线程回调直接执行磁盘操作并保证业务顺序。
 - 活动行程元数据在开始、暂停和恢复时立即更新，每个有效行程点增量写入，避免重复序列化完整轨迹。
+- 路段边界点随轨迹一并持久化；暂停、进程恢复、失锁及 Activity 离开前台都会断开相邻路段，防止重启后补算间隔距离或移动时间。
 - 结束行程在同一事务中先写入已结束统计并迁移活动轨迹点，再清除活动行程；中途失败时优先保留完整可恢复数据。
 - 进程重建时恢复行程模式、开始时间、暂停累计和轨迹点，并主动断开恢复前后的定位点，避免补算跨进程位移。
 - 原始 NMEA 默认不持久化；后续导出能力与轨迹历史继续使用独立存储边界。
@@ -82,7 +85,7 @@ flowchart LR
 
 - NMEA：合法校验和、错误校验和、缺字段、多星座 talker ID、未知语句、非数值字段。
 - 质量门：时间倒退、重复时间、低精度、超时恢复、跳点、静止漂移。
-- 统计：移动/停车边界、暂停、恢复、结束、进程重建和零时长除法。
+- 统计：移动/停车边界、暂停期间冻结、恢复、结束、长轨迹增量累计、进程重建和零时长除法。
 - UI：无权限、无数据、缺海拔、弱定位、过期、超长坐标文本，以及车机 1024×600 安全区。
 - 设备：显式指定 `CASKA_1024x600`；任何安装命令都不能依赖 adb 默认设备。
 

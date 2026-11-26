@@ -1,0 +1,35 @@
+{
+  "platform": "android",
+  "source": "car-app/src/main/java/com/cargps/ui/CarGpsTheme.kt",
+  "colors": {
+    "dark": {
+      "background": "#0B151A",
+      "text": "#F2F6F3",
+      "clock": "#4ED8CE",
+      "date": "#FFC15A",
+      "muted": "#BACBC7",
+      "panel": "#1B2D34"
+    },
+    "light": {
+      "background": "#EAF0ED",
+      "text": "#142525",
+      "clock": "#006A66",
+      "date": "#795600",
+      "muted": "#344C4B",
+      "panel": "#DDE7E3"
+    }
+  },
+  "spacingDp": [
+    8,
+    12,
+    16,
+    20
+  ],
+  "touchMinDp": 56,
+  "typeMaxSp": {
+    "speed": 176,
+    "time": 76,
+    "date": 26
+  },
+  "scope": "car dashboard only"
+}

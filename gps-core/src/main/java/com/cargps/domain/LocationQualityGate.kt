@@ -8,7 +8,7 @@ data class SampleDecision(
 
 class LocationQualityGate(
     private val maxDistanceAccuracyMeters: Float = 30f,
-    private val maxConnectGapMillis: Long = 10_000L,
+    private val maxConnectGapMillis: Long = 3_000L,
 ) {
     fun evaluate(previous: LocationSample?, current: LocationSample): SampleDecision {
         if (!current.hasValidCoordinates()) {

@@ -1,13 +1,18 @@
 # 车机版验证产物
 
-本目录只存放 `com.cargps` 在 `CASKA_1024x600` 上产生的本地验证资料。除本说明外，其余文件默认不进入 Git。
+本目录存放车机应用 `com.cargps` 的本地验证资料。除本说明外，其余文件默认不进入 Git。
 
 ## 当前验证
 
-- `cargps-split-car.png`：拆分为独立项目后的 1024x600 横屏截图。
-- `cargps-split-car.xml`：同次验证的 UI Automator 树，可核对包名、文本和控件边界。
+- `release-v0.1.2/`：v0.1.2 车机 Release APK 与 `SHA256SUMS`；使用本机 Android 调试证书签名，未验证覆盖升级。
+- `ui-redesign-20261126/`：本轮调试 APK、SHA256SUMS、API 27/28 离线原生渲染及测试/Lint 报告。
+- `night.png` / `day-searching.png` / `large-font.png`：从 API 27 原生渲染图裁取的 1024×528 应用内容区。使用测试数据，非道路实测。
+- `api-27/` 与 `api-28/`：Robolectric 原始图，外部灰色区域属于测试宿主背景，不是车机系统栏。
+- Debug APK 使用本机调试签名；未正式发布，不保证能覆盖使用不同签名的已安装版本。
 
 ## 历史资料
+
+以下为历史产物名称索引，当前检出不一定含有这些文件：
 
 - `caska-*.png`：CASKA 界面设计、权限、定位和行程状态截图。
 - `cargps-car-*.png`：车机活动行程与 SQLite 恢复验证截图。
