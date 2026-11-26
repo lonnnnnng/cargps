@@ -1,4 +1,4 @@
-# CarGPS 车机界面
+# GPS 车机界面
 
 作者：long
 
@@ -33,4 +33,4 @@
 
 ## 验证与限制
 
-离线原生渲染覆盖 1024×528 内容区、API 27/28、1.0/1.3 倍字号及日夜主题。截图与测试报告位于 car-app/build/reports/dashboard/ 和 car-app/build/reports/tests/。它们不代表真实车机的驱动或道路性能验收。
+离线原生渲染覆盖 1024×528 内容区、API 27/28、1.0/1.3 倍字号及日夜主题。截图与测试报告位于 app/build/reports/dashboard/ 和 app/build/reports/tests/。它们不代表真实车机的驱动或道路性能验收。

@@ -1,6 +1,6 @@
 {
   "platform": "android",
-  "source": "car-app/src/main/java/com/cargps/ui/CarGpsTheme.kt",
+  "source": "app/src/main/java/com/lonng/cargps/ui/GpsTheme.kt",
   "colors": {
     "dark": {
       "background": "#0B151A",

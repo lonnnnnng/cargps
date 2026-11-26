@@ -14,6 +14,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "CarGps"
-include(":gps-core")
-include(":car-app")
+rootProject.name = "GPS"
+include(":app")

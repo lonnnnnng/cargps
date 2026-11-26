@@ -6,6 +6,12 @@
 
 android
 
+## Application Identity
+
+- 应用名称：GPS。
+- namespace、applicationId 与 Kotlin 根包：`com.lonng.cargps`。
+- 全部源码与测试统一在单个 `app` 应用模块中。
+
 ## Users
 
 车机驾驶员。行驶中快速查看瞬时速度和当前日期时间；定位状态与行程指标作为辅助信息。
@@ -30,7 +36,7 @@ android
 - GPS 与北斗可见/参与定位数量不属于主屏重点，必要时作为次级诊断数据展示。
 - 固定横屏车机主屏不滚动；保持系统栏可见，并确保主要操作目标至少 56dp。
 - 指标采用常用写法：GPS、北斗、HDOP、PDOP、VDOP、NMEA，单位保留 km/h、km、m。其余说明和按钮用中文。
-- 当前仓库只做车机；保留车机应用和其直接依赖的定位核心。
+- 当前仓库只做车机；界面、定位、行程和存储统一维护在 `app` 模块中。
 
 ## Evidence on Hand
 

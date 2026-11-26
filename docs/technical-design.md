@@ -1,4 +1,4 @@
-# CarGPS Android 技术设计
+# GPS Android 技术设计
 
 作者：long  
 验证日期：2026-08-05  
@@ -6,7 +6,7 @@
 
 ## 1. 技术边界
 
-采用原生 Android 多模块工程，以 Kotlin 和 Jetpack Compose 实现固定横屏车机仪表。目标车机可能不包含或不稳定支持 Google Play Services，因此定位核心不依赖 Fused Location Provider，也不把网络作为定位或界面的前置条件。
+采用原生 Android 单模块工程，以 Kotlin 和 Jetpack Compose 实现固定横屏车机仪表。目标车机可能不包含或不稳定支持 Google Play Services，因此定位核心不依赖 Fused Location Provider，也不把网络作为定位或界面的前置条件。
 
 工程固定 `minSdk = 27`，只针对已确认车机减少兼容分支；当前使用 `compileSdk = 34`、`targetSdk = 34`，但运行路径不能把 API 30 才加入的重载直接调用在 API 27 上。
 
@@ -50,17 +50,16 @@ flowchart LR
 | 卫星 | `GnssStatus` | GSA/GSV | 分开显示可见数和参与定位数 |
 | 精度因子 | NMEA GSA/GGA | 无 | 设备未输出时显示“未提供” |
 
-## 5. 工程与模块边界
+## 5. 工程与包边界
 
-- `gps-core`：注册和注销系统位置、NMEA、GNSS 状态监听，并承载质量门、速度估算和行程统计；不包含车机界面。
-- `car-app`：包名 `com.cargps`，只负责 1024×600 横屏车机界面、权限入口和 Activity 生命周期。
-- `nmea-parser`：位于 `gps-core`，处理校验和、字段解析和语句容错，不维护行程状态。
-- `location-quality`：位于 `gps-core`，判断样本是否可显示、是否可累计、是否发生过期或断点。
-- `speed-estimator`：位于 `gps-core`，处理速度来源选择、单位转换、异常值过滤和平滑。
-- `trip-domain`：位于 `gps-core`，处理活动行程状态机、距离和时间统计，不直接依赖 Android UI。
+- `app` 是唯一 Gradle 应用模块，namespace 与 applicationId 均为 `com.lonng.cargps`。
+- 根包：Activity、ViewModel、定位引擎及应用生命周期。
+- `domain`：NMEA 解析、质量门、速度估算和行程统计。
+- `storage`：SQLite 行程存储及写入队列。
+- `ui`：1024×600 横屏仪表与主题。
 - 活动行程统计通过逐点累计器维护距离、移动时长和最高速度，时钟刷新不再遍历完整轨迹；恢复行程时只重建一次累计器。
-- `trip-storage`：活动行程快照、已结束行程与轨迹点的本地持久化。
-- `dashboard-ui`：车机界面只消费 `gps-core` 提供的只读仪表状态，不自行计算业务统计。
+- 车机界面消费同模块 ViewModel 提供的只读仪表状态，不自行计算业务统计。
+- 本地测试与设备数据库测试分别保留于 `app/src/test` 与 `app/src/androidTest`。
 
 业务规则应写在对应模块实现附近。例如，“定位恢复后不连接失锁前后的两个点”应贴近行程累计器的断点处理代码，而不是只保留在类头说明中。代码注释作者统一为 `long`，关键注释说明业务原因和错误结果，不复述语句动作。
 
